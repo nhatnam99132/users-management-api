@@ -49,7 +49,7 @@ pipeline {
                 script {
                     // Get the commit ID for tagging the image
                     def commitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
-                    def imageName = "${DOCKER_IMAGE_NAME}:${commitID}"
+                    def imageName = "namtn6/${DOCKER_IMAGE_NAME}:${commitID}"
 
                     // Push the Docker image to Docker Hub (or another registry)
                     echo "Pushing Docker image: ${imageName}"
