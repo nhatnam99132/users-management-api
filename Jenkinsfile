@@ -1,9 +1,10 @@
 pipeline {
-    agent any
+    agent { label 'docker-agent'}
 
     environment {
-        // Set the Maven tool if installed in Jenkins
-        MAVEN_HOME = tool name: 'M3', type: 'ToolLocation'
+        DOCKER_IMAGE_NAME = 'user-management-app-tomcat'  // Docker image name
+        DOCKER_REGISTRY = 'docker.io'  // Replace with your Docker registry if needed
+        DOCKER_CREDENTIALS = 'Dockerhub'  // Jenkins credentials ID for Docker login
     }
 
     stages {
@@ -15,15 +16,45 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/nhatnam99132/docker-compose-demo.git']]])
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/nhatnam99132/users-management-api.git']]])
             }
         }
 
-        stage('Build and Package') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Run Maven clean and package to build the WAR file
-                    sh "mvnw clean package -DskipTests"
+                    // Get the commit ID for tagging the image
+                    def commitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def imageName = "namtn6/${DOCKER_IMAGE_NAME}:${commitID}"
+
+                    // Build the Docker image
+                    echo "Building Docker image with tag: ${imageName}"
+                    sh "docker build -t ${imageName} ."
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+                script {
+                    // Login to Docker Hub using credentials stored in Jenkins
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo $DOCKER_PASSWORD | docker login --username $DOCKER_USERNAME --password-stdin"
+                    }
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    // Get the commit ID for tagging the image
+                    def commitID = sh(script: 'git rev-parse --short HEAD', returnStdout: true).trim()
+                    def imageName = "${DOCKER_IMAGE_NAME}:${commitID}"
+
+                    // Push the Docker image to Docker Hub (or another registry)
+                    echo "Pushing Docker image: ${imageName}"
+                    sh "docker push ${imageName}"
                 }
             }
         }
