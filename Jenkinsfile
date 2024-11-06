@@ -3,7 +3,6 @@ pipeline {
 
     environment {
         DOCKER_IMAGE_NAME = 'user-management-app-tomcat'  // Docker image name
-        DOCKER_REGISTRY = 'docker.io'  // Replace with your Docker registry if needed
         DOCKER_CREDENTIALS = 'Dockerhub'  // Jenkins credentials ID for Docker login
     }
 
